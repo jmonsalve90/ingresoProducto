@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function App() {
   const [formData, setFormData] = useState({
@@ -9,8 +9,31 @@ function App() {
   const [productos, setProductos] = useState([])
   const [mensaje, setMensaje] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [cargando, setCargando] = useState(true)
+  const [vista, setVista] = useState('formulario')
 
   const API_URL = 'https://nfcch76zw8.execute-api.us-east-1.amazonaws.com/productos'
+
+  const cargarProductos = async () => {
+    setCargando(true)
+    try {
+      const response = await fetch(API_URL)
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+      const data = await response.json()
+      setProductos(data.items || [])
+    } catch (error) {
+      setMensaje(`Error al cargar productos: ${error.message}`)
+      setTimeout(() => setMensaje(''), 4000)
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  useEffect(() => {
+    cargarProductos()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -45,9 +68,9 @@ function App() {
         throw new Error(`Error ${response.status}: ${response.statusText}`)
       }
 
-      setProductos((prev) => [...prev, { id: Date.now(), ...body }])
       setFormData({ nombre: '', stock: '', valor: '' })
       setMensaje('Producto registrado exitosamente')
+      cargarProductos()
     } catch (error) {
       setMensaje(`Error al enviar: ${error.message}`)
     } finally {
@@ -78,84 +101,113 @@ function App() {
         </div>
       </header>
 
+      <nav className="nav-tabs">
+        <button
+          className={`nav-tab ${vista === 'formulario' ? 'active' : ''}`}
+          onClick={() => setVista('formulario')}
+        >
+          Registrar Producto
+        </button>
+        <button
+          className={`nav-tab ${vista === 'listado' ? 'active' : ''}`}
+          onClick={() => { setVista('listado'); cargarProductos(); }}
+        >
+          Listado de Productos
+        </button>
+      </nav>
+
       <main className="main-content">
-        <section className="form-section">
-          <h2>Registrar Nuevo Producto</h2>
+        {mensaje && (
+          <div className={`mensaje ${mensaje.includes('exitosamente') ? 'exito' : 'error'}`}>
+            {mensaje}
+          </div>
+        )}
 
-          {mensaje && (
-            <div className={`mensaje ${mensaje.includes('exitosamente') ? 'exito' : 'error'}`}>
-              {mensaje}
-            </div>
-          )}
+        {vista === 'formulario' && (
+          <section className="form-section">
+            <h2>Registrar Nuevo Producto</h2>
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="nombre">Nombre del Producto</label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-                placeholder="Ej: Tornillos hexagonales"
-              />
-            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="nombre">Nombre del Producto</label>
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleChange}
+                  placeholder="Ej: Tornillos hexagonales"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="stock">Stock (unidades)</label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                placeholder="Ej: 150"
-                min="0"
-              />
-            </div>
+              <div className="form-group">
+                <label htmlFor="stock">Stock (unidades)</label>
+                <input
+                  type="number"
+                  id="stock"
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleChange}
+                  placeholder="Ej: 150"
+                  min="0"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="valor">Valor (precio unitario)</label>
-              <input
-                type="number"
-                id="valor"
-                name="valor"
-                value={formData.valor}
-                onChange={handleChange}
-                placeholder="Ej: 2500"
-                min="0"
-              />
-            </div>
+              <div className="form-group">
+                <label htmlFor="valor">Valor Venta (precio unitario)</label>
+                <input
+                  type="number"
+                  id="valor"
+                  name="valor"
+                  value={formData.valor}
+                  onChange={handleChange}
+                  placeholder="Ej: 2500"
+                  min="0"
+                />
+              </div>
 
-            <button type="submit" className="btn-submit" disabled={enviando}>
-              {enviando ? 'Enviando...' : 'Agregar Producto'}
-            </button>
-          </form>
-        </section>
+              <button type="submit" className="btn-submit" disabled={enviando}>
+                {enviando ? 'Enviando...' : 'Agregar Producto'}
+              </button>
+            </form>
+          </section>
+        )}
 
-        {productos.length > 0 && (
+        {vista === 'listado' && (
           <section className="table-section">
-            <h2>Productos Registrados</h2>
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Stock</th>
-                    <th>Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productos.map((producto) => (
-                    <tr key={producto.id}>
-                      <td>{producto.nombre}</td>
-                      <td>{producto.stock}</td>
-                      <td>${producto.valorVenta.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="table-header">
+              <h2>Listado de Productos</h2>
+              <button className="btn-refresh" onClick={cargarProductos} disabled={cargando}>
+                {cargando ? 'Cargando...' : 'Actualizar'}
+              </button>
             </div>
+
+            {cargando ? (
+              <p className="loading-text">Cargando productos...</p>
+            ) : productos.length === 0 ? (
+              <p className="empty-text">No hay productos registrados.</p>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Stock</th>
+                      <th>Valor Venta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productos.map((producto) => (
+                      <tr key={producto.idTablaEric || producto.id}>
+                        <td>{producto.nombre}</td>
+                        <td>{producto.stock}</td>
+                        <td>${(producto.valorVenta || 0).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         )}
       </main>
