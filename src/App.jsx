@@ -8,13 +8,16 @@ function App() {
   })
   const [productos, setProductos] = useState([])
   const [mensaje, setMensaje] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
+  const API_URL = 'https://nfcch76zw8.execute-api.us-east-1.amazonaws.com/productos'
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!formData.nombre || !formData.stock || !formData.valor) {
@@ -22,18 +25,34 @@ function App() {
       return
     }
 
-    const nuevoProducto = {
-      id: Date.now(),
+    const body = {
       nombre: formData.nombre,
       stock: parseInt(formData.stock),
-      valor: parseInt(formData.valor),
+      valorVenta: parseInt(formData.valor),
     }
 
-    setProductos((prev) => [...prev, nuevoProducto])
-    setFormData({ nombre: '', stock: '', valor: '' })
-    setMensaje('Producto registrado exitosamente')
+    setEnviando(true)
 
-    setTimeout(() => setMensaje(''), 3000)
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+
+      setProductos((prev) => [...prev, { id: Date.now(), ...body }])
+      setFormData({ nombre: '', stock: '', valor: '' })
+      setMensaje('Producto registrado exitosamente')
+    } catch (error) {
+      setMensaje(`Error al enviar: ${error.message}`)
+    } finally {
+      setEnviando(false)
+      setTimeout(() => setMensaje(''), 4000)
+    }
   }
 
   return (
@@ -107,8 +126,8 @@ function App() {
               />
             </div>
 
-            <button type="submit" className="btn-submit">
-              Agregar Producto
+            <button type="submit" className="btn-submit" disabled={enviando}>
+              {enviando ? 'Enviando...' : 'Agregar Producto'}
             </button>
           </form>
         </section>
@@ -130,7 +149,7 @@ function App() {
                     <tr key={producto.id}>
                       <td>{producto.nombre}</td>
                       <td>{producto.stock}</td>
-                      <td>${producto.valor.toLocaleString()}</td>
+                      <td>${producto.valorVenta.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
