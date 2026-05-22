@@ -17,12 +17,10 @@ function App() {
   const cargarProductos = async () => {
     setCargando(true)
     try {
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      })
+      const response = await fetch(API_URL)
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`)
       }
       const data = await response.json()
       setProductos(data.items || [])
