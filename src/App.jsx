@@ -26,6 +26,7 @@ function App() {
     }
 
     const body = {
+      id: crypto.randomUUID(),
       nombre: formData.nombre,
       stock: parseInt(formData.stock),
       valorVenta: parseInt(formData.valor),
