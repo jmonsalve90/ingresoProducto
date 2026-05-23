@@ -11,6 +11,9 @@ function App() {
   const [enviando, setEnviando] = useState(false)
   const [cargando, setCargando] = useState(true)
   const [vista, setVista] = useState('formulario')
+  const [editando, setEditando] = useState(null)
+  const [editData, setEditData] = useState({ nombre: '', stock: '', valorVenta: '' })
+  const [guardando, setGuardando] = useState(false)
 
   const API_URL = 'https://nfcch76zw8.execute-api.us-east-1.amazonaws.com/productos'
 
@@ -76,6 +79,64 @@ function App() {
       setMensaje(`Error al enviar: ${error.message}`)
     } finally {
       setEnviando(false)
+      setTimeout(() => setMensaje(''), 4000)
+    }
+  }
+
+  const handleEditar = (producto) => {
+    setEditando(producto.idTablaEric || producto.id)
+    setEditData({
+      nombre: producto.nombre || '',
+      stock: producto.stock || '',
+      valorVenta: producto.valorVenta || '',
+    })
+  }
+
+  const handleCancelarEdicion = () => {
+    setEditando(null)
+    setEditData({ nombre: '', stock: '', valorVenta: '' })
+  }
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setEditData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleGuardarEdicion = async () => {
+    if (!editData.nombre || !editData.stock || !editData.valorVenta) {
+      setMensaje('Por favor complete todos los campos')
+      return
+    }
+
+    setGuardando(true)
+
+    const body = {
+      id: editando,
+      nombre: editData.nombre,
+      stock: parseInt(editData.stock),
+      valorVenta: parseInt(editData.valorVenta),
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`)
+      }
+
+      setMensaje('Producto actualizado exitosamente')
+      setEditando(null)
+      setEditData({ nombre: '', stock: '', valorVenta: '' })
+      cargarProductos()
+    } catch (error) {
+      setMensaje(`Error al actualizar: ${error.message}`)
+    } finally {
+      setGuardando(false)
       setTimeout(() => setMensaje(''), 4000)
     }
   }
@@ -195,16 +256,75 @@ function App() {
                       <th>Nombre</th>
                       <th>Stock</th>
                       <th>Valor Venta</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {productos.map((producto) => (
-                      <tr key={producto.idTablaEric || producto.id}>
-                        <td>{producto.nombre}</td>
-                        <td>{producto.stock}</td>
-                        <td>${(producto.valorVenta || 0).toLocaleString()}</td>
-                      </tr>
-                    ))}
+                    {productos.map((producto) => {
+                      const id = producto.idTablaEric || producto.id
+                      const isEditing = editando === id
+
+                      return isEditing ? (
+                        <tr key={id} className="editing-row">
+                          <td>
+                            <input
+                              type="text"
+                              name="nombre"
+                              value={editData.nombre}
+                              onChange={handleEditChange}
+                              className="edit-input"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              name="stock"
+                              value={editData.stock}
+                              onChange={handleEditChange}
+                              className="edit-input"
+                              min="0"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              name="valorVenta"
+                              value={editData.valorVenta}
+                              onChange={handleEditChange}
+                              className="edit-input"
+                              min="0"
+                            />
+                          </td>
+                          <td className="actions-cell">
+                            <button
+                              className="btn-save"
+                              onClick={handleGuardarEdicion}
+                              disabled={guardando}
+                            >
+                              {guardando ? 'Guardando...' : 'Guardar'}
+                            </button>
+                            <button
+                              className="btn-cancel"
+                              onClick={handleCancelarEdicion}
+                              disabled={guardando}
+                            >
+                              Cancelar
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={id}>
+                          <td>{producto.nombre}</td>
+                          <td>{producto.stock}</td>
+                          <td>${(producto.valorVenta || 0).toLocaleString()}</td>
+                          <td>
+                            <button className="btn-edit" onClick={() => handleEditar(producto)}>
+                              Editar
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>

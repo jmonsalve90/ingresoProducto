@@ -287,6 +287,96 @@ tbody tr:hover {
   background: #f0f9f4;
 }
 
+/* Editing */
+.editing-row {
+  background: #fffde7;
+}
+
+.editing-row:hover {
+  background: #fffde7;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  border: 2px solid #2ecc71;
+  border-radius: 6px;
+  font-family: inherit;
+  background: white;
+}
+
+.edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btn-edit {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  background: #2ecc71;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-edit:hover {
+  background: #27ae60;
+}
+
+.btn-save {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+  background: #1b7a3d;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-save:hover {
+  background: #145c2e;
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #742a2a;
+  background: #fed7d7;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-cancel:hover {
+  background: #feb2b2;
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .banner {
